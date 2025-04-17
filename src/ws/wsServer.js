@@ -7,6 +7,7 @@ export function initWebSocketServer(server) {
 
   wss.on('connection', (ws) => {
     ws.on('message', async (data) => {
+      console.log(`📨 [WS] Message received: ${message}`);
       const msg = JSON.parse(data);
       const userId = msg.userId;
 

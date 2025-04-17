@@ -9,6 +9,11 @@ import leaderboardRoutes from './routes/leaderboardRoutes.js';
 const app = express();
 app.use(express.json());
 
+app.use((req, res, next) => {
+    console.log(`📥 [HTTP] ${req.method} ${req.originalUrl}`);
+    next();
+  });
+  
 app.use('/api/games', gameRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/data', dataRoutes); 
