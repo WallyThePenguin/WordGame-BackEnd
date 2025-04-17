@@ -1,4 +1,4 @@
-import redis from "../redis/redisClient.js";
+import redis from "../utils/redisClient.js";
 import { COMBO_WINDOW_SECONDS, MULTIPLIER_INCREMENT, MAX_MULTIPLIER } from "../config/gameConfig.js";
 import { json } from "express";
 const comboKey = (userId, gameId) => `match:${gameId}:player:${userId}:combo`;
