@@ -1,0 +1,98 @@
+// schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(uuid())
+  username     String   @unique
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  dailyStreak Int       @default(0)
+  lastLogin   DateTime?
+  winStreak   Int       @default(0)
+  totalWins   Int       @default(0)
+  totalLosses Int       @default(0)
+
+  gamesAsPlayerOne Game[]           @relation("Player1Games")
+  gamesAsPlayerTwo Game[]           @relation("Player2Games")
+  gamesWon         Game[]           @relation("Game_winnerIdToUser")
+  wordSubmissions  WordSubmission[]
+  practiceStats    PracticeStat?
+  friendships      Friendship[]     @relation("UserFriendships")
+  friendsWithMe    Friendship[]     @relation("FriendConnections")
+}
+
+model Friendship {
+  id        String           @id @default(uuid())
+  userId    String
+  friendId  String
+  status    FriendshipStatus @default(PENDING)
+  createdAt DateTime         @default(now())
+
+  user   User @relation("UserFriendships", fields: [userId], references: [id])
+  friend User @relation("FriendConnections", fields: [friendId], references: [id])
+
+  @@unique([userId, friendId])
+}
+
+enum FriendshipStatus {
+  PENDING
+  ACCEPTED
+}
+
+model Game {
+  id        String     @id @default(uuid())
+  createdAt DateTime   @default(now())
+  status    GameStatus
+  letters   String
+  endsAt    DateTime
+
+  playerOneId String
+  playerOne   User   @relation("Player1Games", fields: [playerOneId], references: [id])
+
+  playerTwoId String
+  playerTwo   User   @relation("Player2Games", fields: [playerTwoId], references: [id])
+
+  winnerId String?
+  winner   User?   @relation("Game_winnerIdToUser", fields: [winnerId], references: [id])
+
+  submissions WordSubmission[]
+}
+
+model WordSubmission {
+  id        String   @id @default(uuid())
+  gameId    String
+  userId    String
+  word      String
+  score     Int
+  createdAt DateTime @default(now())
+
+  game Game @relation(fields: [gameId], references: [id])
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([gameId, userId, word]) // 🚫 Prevent duplicate word submissions
+}
+
+model PracticeStat {
+  id         String @id @default(uuid())
+  userId     String @unique
+  user       User   @relation(fields: [userId], references: [id])
+  bestScore  Int
+  totalPlays Int
+}
+
+enum GameStatus {
+  PENDING
+  ACTIVE
+  FINISHED
+}
