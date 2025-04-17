@@ -6,6 +6,7 @@ import {
   import { generateRandomLetters, getOpponentFromGame, registerGame } from '../../utils/wsHelpers.js';
   import { submitWord } from '../../services/wordService.js';
   import { GAME_DURATION_SECONDS } from '../../config/gameConfig.js';
+  import { updateComboState } from '../../utils/comboUtil.js'; // ✅ already imported
   
   function startGameTimer(gameId, duration, p1, p2) {
     let remaining = duration;
@@ -74,13 +75,35 @@ import {
       }
   
       const result = await submitWord({ gameId, userId, word });
+
       ws.send(JSON.stringify({ type: 'WORD_SUBMISSION_RESULT', ...result }));
   
       if (result.success) {
+        // ✅ Combo logic (valid word)
+        const { totalScore, bonusScore, comboLevel } = await updateComboState(gameId, userId, result.score || 0);
+        ws.send(JSON.stringify({
+          type: 'COMBO_BONUS',
+          word,
+          comboLevel,
+          bonusScore,
+          totalScore
+        }));
+  
         const opponentId = getOpponentFromGame(gameId, userId);
         const opponentSocket = playerConnections.get(opponentId);
         opponentSocket?.send(JSON.stringify({ type: 'OPPONENT_SUBMITTED', word, userId }));
+  
+      } else {
+        // ❌ Reset combo on invalid or duplicate word
+        await resetComboState(gameId, userId);
+        ws.send(JSON.stringify({
+          type: 'COMBO_RESET',
+          reason: 'invalid_or_duplicate',
+          word
+        }));
       }
+  
     }
   }
+  
   
