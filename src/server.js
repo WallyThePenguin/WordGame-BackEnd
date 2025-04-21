@@ -5,6 +5,7 @@ import http from 'http';
 import app from './app.js';
 import { PrismaClient } from '@prisma/client';
 import { initWebSocketServer } from './ws/wsServer.js';
+import { recoverGamesOnStartup } from './services/gameStateManager.js';
 
 
 const PORT = process.env.PORT || 3000;
@@ -28,6 +29,8 @@ async function testDatabaseConnection() {
   if (!dbReady) {
     process.exit(1); // Exit with failure code
   }
+  await recoverGamesOnStartup();
+  console.log('🔄 Recovered active games on startup.');
 
   const server = http.createServer(app);
   initWebSocketServer(server);
