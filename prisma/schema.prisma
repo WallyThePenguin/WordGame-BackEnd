@@ -89,6 +89,7 @@ model PracticeStat {
   user       User   @relation(fields: [userId], references: [id])
   bestScore  Int
   totalPlays Int
+  totalScore Int    @default(0)
 }
 
 enum GameStatus {

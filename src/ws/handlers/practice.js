@@ -53,6 +53,25 @@ export async function handle(msg, ws) {
   }
 
   if (type === 'PRACTICE_REROLL' && session) {
+    // Clear existing interval
+    clearInterval(session.autoRerollInterval);
+
+    // Set new interval
+    const interval = setInterval(() => {
+      const s = practiceSessions.get(userId);
+      if (!s) return;
+      s.letters = generateRandomLetters(7);
+      const newPossibleWords = getPossibleWords(s.letters, 'sowpods');
+      playerConnections.get(userId)?.send(JSON.stringify({
+        type: 'PRACTICE_LETTERS_UPDATED',
+        letters: s.letters,
+        reason: 'AUTO_REROLL',
+        possibleWords: newPossibleWords.length
+      }));
+    }, 30000);
+
+    // Update session with new interval
+    session.autoRerollInterval = interval;
     session.letters = generateRandomLetters(7);
     const possibleWords = getPossibleWords(session.letters, 'sowpods');
     ws.send(JSON.stringify({
@@ -177,7 +196,7 @@ export async function handle(msg, ws) {
     ws.send(JSON.stringify(response));
   }
 
-  if (type === 'END_PRACTICE' && session) {
+  if (type === 'PRACTICE_END' && session) {
     clearInterval(session.autoRerollInterval);
 
     try {
